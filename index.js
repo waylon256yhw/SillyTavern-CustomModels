@@ -2,19 +2,17 @@ import { saveSettingsDebounced } from '../../../../script.js';
 import { extension_settings } from '../../../extensions.js';
 
 const settings = {
-    provider: {
-        claude: [],
-        openai: [],
-        google: [],
-    },
-    openai_model: undefined,
-    claude_model: undefined,
-    google_model: undefined,
+    provider: {},
 };
 Object.assign(settings, extension_settings.customModels ?? {});
-// fix if installed before google support was added
-if (!settings.provider.google) settings.provider.google = [];
-if (!settings.google_model) settings.google_model = undefined;
+
+// 动态检测所有 provider
+for (const sel of document.querySelectorAll('[id^="model_"][id$="_select"]')) {
+    const match = sel.id.match(/^model_(.+)_select$/);
+    if (match && !settings.provider[match[1]]) {
+        settings.provider[match[1]] = [];
+    }
+}
 
 // old popups, ancient ST
 let popupCaller;
@@ -37,7 +35,9 @@ try {
 
 for (const [provider, models] of Object.entries(settings.provider)) {
     const sel = /**@type {HTMLSelectElement}*/(document.querySelector(`#model_${provider}_select`));
-    const h4 = sel.parentElement.querySelector('h4');
+    if (!sel) continue;
+    const h4 = sel.parentElement?.querySelector('h4');
+    if (!h4) continue;
     const btn = document.createElement('div'); {
         btn.classList.add('stcm--btn');
         btn.classList.add('menu_button');
